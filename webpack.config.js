@@ -14,10 +14,10 @@ const paths = {
     video: "./src/video"
   },
   dist: {
-    js: "./assets/js",
-    css: "./assets/css",
-    img: "./assets/images",
-    video: "./assets/video"
+    js: "assets/js",
+    css: "assets/css",
+    img: "assets/images",
+    video: "assets/video"
   },
 };
 
@@ -30,21 +30,26 @@ module.exports = {
     index: [paths.src.js + "/index.js", paths.src.scss + "/index.scss"],
   },
   output: {
-    filename: paths.dist.js + "/[name].bundle.js",
+    path: path.resolve(__dirname, "dist"),
+    filename: `assets/js/[name].bundle.js`,
+    publicPath: '/', // Uncomment if needed for asset URLs
   },
   mode: "development",
   devtool: "source-map",
   module: {
     rules: [
       {
+        test: /\.m?js/,
+        include: /node_modules/,
+        resolve: {
+          fullySpecified: false // Only disable for node_modules
+        }
+      },
+      {
         test: /\.(sass|scss|css)$/,
         use: [
-          {
-            loader: MiniCssExtractPlugin.loader,
-          },
-          {
-            loader: 'css-loader',
-          },
+          MiniCssExtractPlugin.loader,
+          'css-loader',
           {
             loader: 'postcss-loader',
             options: {
@@ -55,18 +60,25 @@ module.exports = {
           },
           {
             loader: 'sass-loader',
+            options: {
+              api: 'modern-compiler', // For latest sass-loader compatibility
+            }
           },
         ],
       },
       {
         test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        use: {
-          loader: 'file-loader',
-          options: {
-            name: '[name].[ext]',
-            outputPath: 'assets/fonts',
-            publicPath: '../fonts',
-          },
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/fonts/[name][ext]'
+        }
+      },
+      // Add other asset rules if needed
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/images/[name][ext]'
         }
       }
     ],
@@ -75,7 +87,7 @@ module.exports = {
     splitChunks: {
       cacheGroups: {
         vendor: {
-          test: /[\\/](node_modules)[\\/].+\.js$/,
+          test: /[\\/]node_modules[\\/].+\.js$/,
           name: "vendor",
           chunks: "all",
         },
@@ -85,12 +97,8 @@ module.exports = {
   plugins: [
     new CopyPlugin({
       patterns: [
-        {
-          from: paths.src.img, to: paths.dist.img,
-        },
-        {
-          from: paths.src.video, to: paths.dist.video,
-        }
+        { from: paths.src.img, to: paths.dist.img },
+        { from: paths.src.video, to: paths.dist.video }
       ],
     }),
     new HandlebarsPlugin({
@@ -121,7 +129,7 @@ module.exports = {
     }),
     new RemoveEmptyScriptsPlugin(),
     new MiniCssExtractPlugin({
-      filename: paths.dist.css + "/[name].bundle.css",
+      filename: `${paths.dist.css}/[name].bundle.css`, // Fixed: template literal for consistency
     }),
     new BrowserSyncPlugin(
       {
@@ -135,8 +143,16 @@ module.exports = {
     )
   ],
   devServer: {
-    contentBase: path.join(__dirname, "dist"),
+    client: {
+      overlay: false,  // Disable all overlays completely
+      logging: 'none'
+    },
+    static: {
+      directory: path.join(__dirname, "dist"), // Fixed: contentBase -> static [web:1][web:6][web:21]
+    },
     compress: true,
     port: 9000,
+    hot: true, // Enable HMR if needed
+    historyApiFallback: true,
   },
 };

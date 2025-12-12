@@ -3,7 +3,11 @@
 
 // bootstrap & variables
 @import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
 @import "variables";
+$spacers: map-merge( $spacers, ( 10: 4rem, 15: 5rem, 20: 6rem ));
+@import "~bootstrap/scss/maps";
+@import "~bootstrap/scss/mixins";
 @import "utilities";
 @import "user";
 @import "~bootstrap/scss/bootstrap";
